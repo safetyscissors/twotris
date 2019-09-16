@@ -66,6 +66,7 @@ define(function() {
     return {
         setupGrid: setupGrid,
         getGrid: function() {return grid},
+        getCols: function() {return grid[0].length},
         log: function(logger) {logger.log(grid)},
         update: function() {
 

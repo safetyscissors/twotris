@@ -13,11 +13,13 @@ function init() {
         'scripts/render.js',
         'scripts/grid.js',
         'scripts/pieces.js',
-    ], function(logger, configs, states, timeline, render, grid, pieces) {
+        'scripts/controls.js',
+    ], function(logger, configs, states, timeline, render, grid, pieces, controls) {
         const canvasDom = document.querySelector("canvas");
         const ctx = canvasDom.getContext("2d");
         logger.log('configs:', configs);
         grid.setupGrid(configs);
+        controls.setupListeners(configs);
         render.setupCtx(ctx, configs, grid, pieces);
 
         // init grids
@@ -26,17 +28,18 @@ function init() {
         // init draw
 
         setInterval(function() {
-            tick(logger, configs, states, timeline, grid, pieces);
+            tick(logger, configs, states, timeline, grid, pieces, controls);
             draw(states, timeline, render);
         }, 1000/configs.fps);
     });
 }
 
-function tick(logger, configs, states, timeline, grid, pieces) {
+function tick(logger, configs, states, timeline, grid, pieces, controls) {
     updateTimeline(timeline, states);
     if (states.isRunning()) {
-        pieces.update(grid);
+        pieces.update(grid, controls.getQueue());
         grid.update();
+        controls.resetQueue();
     }
     // On state change
     if (states.getState() !== states.getPreviousTickState()) {
