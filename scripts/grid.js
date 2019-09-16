@@ -1,6 +1,7 @@
 define(function() {
     let grid = [];
     let tileSize = 20;
+    let newPiece = false;
 
     const colors = [
         '#b54542',
@@ -29,48 +30,52 @@ define(function() {
         }
     }
 
-    function insertPiece(piece) {
-        if (checkPieceCollision(piece)) {
-            let position = piece.data.positions[piece.rotation];
-            for (i = 0; i < position.length; i++) {
-                for (j = 0; j < position[i].length; j++) {
+    function insertPiece(position, row, col, id) {
+        if (collisionCheck(position, row + 1, col)) {
+            for (let i = 0; i < position.length; i++) {
+                for (let j = 0; j < position[i].length; j++) {
                     if (position[i][j] !== 1) continue;
-                    grid[piece.row + i][piece.col + j] = piece.data.id;
+                    grid[row + i][col + j] = id;
                 }
             }
+            newPiece = true;
             return true;
         }
         return false;
     }
 
-    function checkPieceCollision(piece) {
-        // if any piece is about to collide, insert, return true.
-        let position = piece.data.positions[piece.rotation];
-        for (i = 0; i < position.length; i++) {
-            // no collision if there are no piece tiles
-            if (position.length === 0) continue;
-            // collision if the row below is end of grid.
-            let rowBelow = grid[piece.row + i + 1];
-            if (!rowBelow) {
-                if (position[i].length > 0) return true;
-                continue;
-            }
-            // collision if row below has an existing piece.
-            for (j = 0; j < position[i].length; j++) {
+    function collisionCheck(position, row, col) {
+        for (let i = 0; i < position.length; i++) {
+            // if no tiles on this position row, skip.
+            if (position[i].length === 0) continue;
+            // collision if row is outside the grid.
+            if (row + i > 20 - 1) return true;
+            // check every tile does not overlap
+            for (let j = 0; j < position.length; j++) {
                 if (position[i][j] !== 1) continue;
-                if (rowBelow[piece.col + j] !== undefined && rowBelow[piece.col + j] !== null) return true;
+                // check if col is outside the grid.
+                if (col + j < 0 || col + j > 10 - 1) return true;
+                const cell = grid[row + i][col + j];
+                if (cell !== undefined && cell !== null) return true;
             }
         }
         return false;
     }
+
+    function update() {
+        if (newPiece) {
+            // check for cleared lines
+        }
+        newPiece = false;
+    }
+
     return {
         setupGrid: setupGrid,
         getGrid: function() {return grid},
         getCols: function() {return grid[0].length},
         log: function(logger) {logger.log(grid)},
-        update: function() {
-
-        },
+        update: update,
+        collisionCheck: collisionCheck,
         insertPiece: insertPiece,
         render: render,
     }

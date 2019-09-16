@@ -25,13 +25,12 @@ define(function() {
             case 'ArrowDown':
                 action = 'DROP';
                 break;
-            case 'SPACE':
+            case 'Space':
                 action = 'FASTDROP';
                 break;
         }
         if (controlQueue.indexOf(action) > -1) return;
         controlQueue.push(action);
-        console.log(controlQueue);
     }
 
     return {

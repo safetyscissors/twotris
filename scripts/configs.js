@@ -5,6 +5,6 @@ define({
     tileHeight: 40,
     rows: 20,
     cols: 10,
-    fps: 10,
-    ticksPerMove: 10,
+    fps: 20,
+    ticksPerMove: 20,
 });
