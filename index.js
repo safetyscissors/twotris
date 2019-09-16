@@ -11,11 +11,14 @@ function init() {
         'scripts/states.js',
         'scripts/timeline.js',
         'scripts/render.js',
-    ], function(logger, configs, states, timeline, render) {
+        'scripts/grid.js',
+        'scripts/pieces.js',
+    ], function(logger, configs, states, timeline, render, grid, pieces) {
         const canvasDom = document.querySelector("canvas");
         const ctx = canvasDom.getContext("2d");
         logger.log('configs:', configs);
-        render.setupCtx(ctx, configs);
+        grid.setupGrid(configs);
+        render.setupCtx(ctx, configs, grid, pieces);
 
         // init grids
         // init controls
@@ -23,14 +26,18 @@ function init() {
         // init draw
 
         setInterval(function() {
-            tick(logger, configs, states, timeline);
+            tick(logger, configs, states, timeline, grid, pieces);
             draw(states, timeline, render);
         }, 1000/configs.fps);
     });
 }
 
-function tick(logger, configs, states, timeline) {
+function tick(logger, configs, states, timeline, grid, pieces) {
     updateTimeline(timeline, states);
+    if (states.isRunning()) {
+        pieces.update(grid);
+        grid.update();
+    }
     // On state change
     if (states.getState() !== states.getPreviousTickState()) {
         logger.log('state change:', states.getPreviousTickState(), '->', states.getState());
@@ -41,7 +48,7 @@ function tick(logger, configs, states, timeline) {
 
 function draw(states, timeline, render) {
     render.clear();
-    if (states.isRunning()) {
+    if (states.isRunning() || states.isInit()) {
         render.drawBoard();
         if (states.isInit()) {
             render.animateInit(timeline);
@@ -53,7 +60,7 @@ function draw(states, timeline, render) {
  * HELPER FUNCTIONS
  */
 function updateTimeline(timeline, states) {
-    if (states.isRunning()) timeline.tick();
+    if (states.isRunning() || states.isInit()) timeline.tick();
     if (states.isInit() && timeline.getFrame() > timeline.initAnimation.length) {
         states.start();
         timeline.reset();
@@ -70,7 +77,7 @@ function updateButton(logger, states) {
         startBtn.innerHTML = 'start';
         startBtn.addEventListener('click', states.init);
     }
-    if (states.isRunning()) {
+    if (states.isRunning() || states.isInit()) {
         startBtn.innerHTML = 'pause';
         startBtn.removeEventListener('click', states.init);
         startBtn.addEventListener('click', states.pause);

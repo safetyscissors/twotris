@@ -14,7 +14,7 @@ define(function() {
         pause: function() {updateState(3)},
         end: function() {updateState(4)},
         setPreviousTickState: function(i){previousTickState = i},
-        isRunning: function() {return state === 1 || state === 2},
+        isRunning: function() {return state === 2},
         isInit: function() {return state === 1},
         isIdle: function() {return state === 0},
         isPaused: function() {return state === 3},

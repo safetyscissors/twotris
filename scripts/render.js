@@ -1,9 +1,12 @@
 define(function() {
     let ctx;
-
+    let grid;
+    let piece;
     return {
-        setupCtx: function(newCtx, configs){
+        setupCtx: function(newCtx, configs, gridObj, pieceObj){
             ctx = newCtx;
+            grid = gridObj;
+            pieces = pieceObj;
             ctx.canvas.width = configs.canvasWidth;
             ctx.canvas.height = configs.canvasHeight;
         },
@@ -15,7 +18,8 @@ define(function() {
                 10, 50);
         },
         drawBoard: function() {
-
+            grid.render(ctx);
+            pieces.render(ctx);
         },
     }
 });
