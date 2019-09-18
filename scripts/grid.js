@@ -1,7 +1,11 @@
 define(function() {
     let grid = [];
+    let rowClearAnimationStep = 0;
+    let rowClearAnimationFlashTicks = 3;
+    let rowClearAnimationColor = '#999';
     let tileSize = 20;
     let newPiece = false;
+    let gameOver = false;
 
     const colors = [
         '#b54542',
@@ -14,6 +18,7 @@ define(function() {
 
     function setupGrid(configs) {
         grid = [];
+        gameOver = false;
         tileSize = configs.tileWidth;
         for(let i = 0; i < configs.rows; i++) {
             grid[i] = new Array(configs.cols);
@@ -24,14 +29,27 @@ define(function() {
         for(let i = 0; i < grid.length; i++) {
             for (let j = 0; j < grid[i].length; j++) {
                 if (grid[i][j] === undefined || grid[i][j] === null) continue;
-                ctx.fillStyle = colors[grid[i][j]];
+
+                // animate line clear
+                if (grid[i][j] < 0) {
+                    ctx.fillStyle = (Math.floor(rowClearAnimationStep / rowClearAnimationFlashTicks) % 2=== 1)? '#FFF' : rowClearAnimationColor;
+                    console.log(ctx.fillStyle, rowClearAnimationStep);
+                // normal rendering
+                } else {
+                    ctx.fillStyle = colors[grid[i][j]];
+                }
                 ctx.fillRect(j*tileSize, i*tileSize, tileSize, tileSize);
             }
         }
+        rowClearAnimationStep++;
     }
 
     function insertPiece(position, row, col, id) {
         if (collisionCheck(position, row + 1, col)) {
+            if (collisionCheck(position, row, col)) {
+                // game over
+                gameOver = true;
+            }
             for (let i = 0; i < position.length; i++) {
                 for (let j = 0; j < position[i].length; j++) {
                     if (position[i][j] !== 1) continue;
@@ -63,8 +81,30 @@ define(function() {
     }
 
     function update() {
+        // check for line clear
         if (newPiece) {
             // check for cleared lines
+            for (let [i, row] of grid.entries()) {
+                let everyCellHasATile = !row.includes(undefined);
+                if (everyCellHasATile) {
+                    rowClearAnimationStep = 0;
+                    for (let [j, cell] of row.entries()) {
+                        grid[i][j] = -1;
+                    }
+                }
+            }
+        }
+        // check for line removal
+        if (rowClearAnimationStep === 6) {
+            let newGrid = [];
+            for (let [i, row] of grid.entries()) {
+                if (!row.includes(-1)) {
+                    newGrid.push(row);
+                } else {
+                    newGrid.unshift(new Array(row.length));
+                }
+            }
+            grid = newGrid;
         }
         newPiece = false;
     }
@@ -73,6 +113,7 @@ define(function() {
         setupGrid: setupGrid,
         getGrid: function() {return grid},
         getCols: function() {return grid[0].length},
+        isGameOver: function() {return gameOver},
         log: function(logger) {logger.log(grid)},
         update: update,
         collisionCheck: collisionCheck,

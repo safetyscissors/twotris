@@ -18,7 +18,6 @@ function init() {
         const canvasDom = document.querySelector("canvas");
         const ctx = canvasDom.getContext("2d");
         logger.log('configs:', configs);
-        grid.setupGrid(configs);
         controls.setupListeners(configs);
         render.setupCtx(ctx, configs, grid, pieces);
 
@@ -36,25 +35,47 @@ function init() {
 
 function tick(logger, configs, states, timeline, grid, pieces, controls) {
     updateTimeline(timeline, states);
+    // pause game
+    if (controls.requestPause()) {
+        states.togglePause();
+    }
+
     if (states.isRunning()) {
         pieces.update(grid, controls.getQueue());
         grid.update();
-        controls.resetQueue();
+        if (grid.isGameOver()) {
+            states.end();
+        }
     }
+
     // On state change
     if (states.getState() !== states.getPreviousTickState()) {
+        // if just started.
+        if (states.isInit() && states.getPreviousTickState() !== 3) {
+            grid.setupGrid(configs);
+        }
+
         logger.log('state change:', states.getPreviousTickState(), '->', states.getState());
-        updateButton(logger, states);
         states.setPreviousTickState(states.getState());
     }
+    controls.resetQueue();
 }
 
 function draw(states, timeline, render) {
     render.clear();
-    if (states.isRunning() || states.isInit()) {
+    if (states.isIdle()) {
+        render.animateStart();
+    }
+    if (states.isRunning() || states.isInit() || states.isPaused() || states.isEnd()) {
         render.drawBoard();
         if (states.isInit()) {
             render.animateInit(timeline);
+        }
+        if (states.isPaused()) {
+            render.animatePause()
+        }
+        if (states.isEnd()) {
+            render.animateEnd()
         }
     }
 
@@ -70,25 +91,6 @@ function updateTimeline(timeline, states) {
     }
     if (states.isPaused()) {
         timeline.reset(0);
-    }
-}
-
-function updateButton(logger, states) {
-    const startBtn = document.querySelector("button");
-
-    if (states.isIdle()) {
-        startBtn.innerHTML = 'start';
-        startBtn.addEventListener('click', states.init);
-    }
-    if (states.isRunning() || states.isInit()) {
-        startBtn.innerHTML = 'pause';
-        startBtn.removeEventListener('click', states.init);
-        startBtn.addEventListener('click', states.pause);
-    }
-    if (states.isPaused()) {
-        startBtn.innerHTML = 'resume';
-        startBtn.removeEventListener('click', states.pause);
-        startBtn.addEventListener('click', states.init);
     }
 }
 

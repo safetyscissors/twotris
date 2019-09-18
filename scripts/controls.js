@@ -28,6 +28,9 @@ define(function() {
             case 'Space':
                 action = 'FASTDROP';
                 break;
+            case 'Escape':
+                action = 'PAUSE';
+                break;
         }
         if (controlQueue.indexOf(action) > -1) return;
         controlQueue.push(action);
@@ -36,6 +39,7 @@ define(function() {
     return {
         setupListeners: setupListeners,
         getQueue: function() {return controlQueue},
+        requestPause: function() {return controlQueue.includes('PAUSE')},
         resetQueue: function() {controlQueue = []}
     }
 });

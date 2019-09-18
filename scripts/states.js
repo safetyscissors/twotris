@@ -6,6 +6,15 @@ define(function() {
     function updateState(newStateIndex) {
         state = newStateIndex;
     }
+
+    function togglePause() {
+        if (state === 1 || state === 2){
+            state = 3;
+        } else {
+            state = 1;
+        }
+    }
+
     return {
         getState: function() {return state},
         getPreviousTickState: function() {return previousTickState},
@@ -13,6 +22,7 @@ define(function() {
         start: function() {updateState(2)},
         pause: function() {updateState(3)},
         end: function() {updateState(4)},
+        togglePause: togglePause,
         setPreviousTickState: function(i){previousTickState = i},
         isRunning: function() {return state === 2},
         isInit: function() {return state === 1},
