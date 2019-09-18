@@ -2,13 +2,16 @@ define(function() {
     let ctx;
     let grid;
     let piece;
+    let gameSize;
+
     return {
         setupCtx: function(newCtx, configs, gridObj, pieceObj){
             ctx = newCtx;
             grid = gridObj;
-            pieces = pieceObj;
-            ctx.canvas.width = configs.canvasWidth;
-            ctx.canvas.height = configs.canvasHeight;
+            piece = pieceObj;
+            ctx.canvas.width = configs.canvasSize.width;
+            ctx.canvas.height = configs.canvasSize.height;
+            gameSize = configs.gameSize;
         },
         clear: function() {
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -35,8 +38,14 @@ define(function() {
 
         },
         drawBoard: function() {
+            // draw border
+            ctx.lineWidth = "1";
+            ctx.rect(0, 0, gameSize.width + .5, gameSize.height);
+            ctx.stroke();
+
             grid.render(ctx);
-            pieces.render(ctx);
+            piece.render(ctx);
+            piece.renderQueue(ctx);
         },
     }
 });

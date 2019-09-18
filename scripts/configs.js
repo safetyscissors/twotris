@@ -1,6 +1,12 @@
 define({
-    canvasWidth: 400,
-    canvasHeight: 800,
+    canvasSize: {
+        width: 600,
+        height: 800
+    },
+    gameSize: {
+        width: 400,
+        height: 800,
+    },
     tileWidth: 40,
     tileHeight: 40,
     rows: 20,

@@ -193,6 +193,21 @@ define(function() {
         }
     }
 
+    function renderQueue(ctx) {
+        if (!queue.length) return;
+        for (let [queueIndex, pieceId] of queue.slice().reverse().entries()) {
+            const position = pieces[pieceId].positions[0];
+            for(let i = 0; i < position.length; i++) {
+                for (let j = 0; j < position[i].length; j++) {
+                    if (!position[i][j]) continue;
+                    ctx.fillStyle = pieces[pieceId].color;
+                    const halfSize = tileSize/2;
+                    ctx.fillRect(420 + j * halfSize, (queueIndex * 50) + i * halfSize, halfSize, halfSize);
+                }
+            }
+        }
+    }
+
     function newActivePiece(id) {
         return {
             id: id,
@@ -206,7 +221,9 @@ define(function() {
     function update(grid, controlsQueue) {
         if (!activePiece.data) {
             activePiece = newActivePiece(queue.pop());
-            queue.unshift(Math.floor(Math.random() * 7));
+            while (queue.length < 5) {
+                queue.unshift(Math.floor(Math.random() * 7));
+            }
         }
         // move piece
         let move = getFirst(controlsQueue, ['LEFT', 'RIGHT', 'DROP', 'FASTDROP']);
@@ -292,5 +309,6 @@ define(function() {
     return {
         update: update,
         render: render,
+        renderQueue: renderQueue
     }
 });
