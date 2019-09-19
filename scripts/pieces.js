@@ -1,6 +1,7 @@
 define(function() {
     let activePiece = {};
     let queue = [1];
+    let displayGrid = [];
 
     const ticksPerDrop = 8;
     const ticksPerRotate = 1;
@@ -10,6 +11,9 @@ define(function() {
     let moveCooldown = ticksPerMove;
     let rotateCooldown = ticksPerRotate;
     let dropCooldown = ticksPerDrop;
+
+    let partnerQueue = [1];
+    let queueUpdated = false;
 
     const pieces = [
         { // I
@@ -193,19 +197,30 @@ define(function() {
         }
     }
 
-    function renderQueue(ctx) {
-        if (!queue.length) return;
-        for (let [queueIndex, pieceId] of queue.slice().reverse().entries()) {
+    function renderAllQueues(ctx) {
+        renderQueue(ctx, queue, 410);
+        renderQueue(ctx, partnerQueue, 910);
+    }
+
+    function renderQueue(ctx, _queue, offset) {
+        if (!_queue || !_queue.length) return;
+        for (let [queueIndex, pieceId] of _queue.slice().reverse().entries()) {
             const position = pieces[pieceId].positions[0];
             for(let i = 0; i < position.length; i++) {
                 for (let j = 0; j < position[i].length; j++) {
                     if (!position[i][j]) continue;
                     ctx.fillStyle = pieces[pieceId].color;
-                    const halfSize = tileSize/2;
-                    ctx.fillRect(420 + j * halfSize, (queueIndex * 50) + i * halfSize, halfSize, halfSize);
+                    const scale = tileSize/4;
+                    ctx.fillRect(offset + j * scale, (queueIndex * 30) + i * scale, scale, scale);
                 }
             }
         }
+    }
+
+    function exportQueue(pusher) {
+        if (!queueUpdated) return;
+        pusher.sendQueue(queue);
+        queueUpdated = false;
     }
 
     function newActivePiece(id) {
@@ -223,6 +238,7 @@ define(function() {
             activePiece = newActivePiece(queue.pop());
             while (queue.length < 5) {
                 queue.unshift(Math.floor(Math.random() * 7));
+                queueUpdated = true;
             }
         }
         // move piece
@@ -248,11 +264,12 @@ define(function() {
                     break;
                 case 'DROP':
                     dropCooldown = ticksPerDrop;
-                    if (grid.insertPiece(
+                    if (grid.safeInsertPiece(
                         activePiece.data.positions[activePiece.rotation],
                         activePiece.row,
                         activePiece.col,
-                        activePiece.data.id)) {
+                        activePiece.data.id,
+                        grid.getGrid())) {
                         activePiece = {};
                         return;
                     } else {
@@ -262,11 +279,12 @@ define(function() {
                 case 'FASTDROP':
                     dropCooldown = ticksPerDrop;
                     for (let i = activePiece.row; i < 20; i++) {
-                        if (grid.insertPiece(
+                        if (grid.safeInsertPiece(
                             activePiece.data.positions[activePiece.rotation],
                             i,
                             activePiece.col,
-                            activePiece.data.id)) {
+                            activePiece.data.id,
+                            grid.getGrid())) {
                             activePiece = {};
                             return;
                         }
@@ -289,11 +307,12 @@ define(function() {
         // drop piece
         if (--dropCooldown <= 0) {
             dropCooldown = ticksPerDrop;
-            if (grid.insertPiece(
+            if (grid.safeInsertPiece(
                     activePiece.data.positions[activePiece.rotation],
                     activePiece.row,
                     activePiece.col,
-                    activePiece.data.id)) {
+                    activePiece.data.id,
+                    grid.getGrid())) {
                 activePiece = {};
             } else {
                 activePiece.row += 1;
@@ -309,6 +328,11 @@ define(function() {
     return {
         update: update,
         render: render,
-        renderQueue: renderQueue
+        renderQueue: renderAllQueues,
+        exportQueue: exportQueue,
+        setPartnerQueue: function(q) {partnerQueue = q},
+        getActivePiece: function() {return activePiece;},
+        getGrid: function() {return displayGrid;},
+        setupActivePiece: function() {activePiece = {}}
     }
 });

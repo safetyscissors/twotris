@@ -1,6 +1,6 @@
 define({
     canvasSize: {
-        width: 600,
+        width: 1002,
         height: 800
     },
     gameSize: {

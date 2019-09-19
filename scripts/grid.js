@@ -1,11 +1,15 @@
 define(function() {
     let grid = [];
+    let exportGrid = [];
+    let partnerGrid = [];
+    let tempGrid = [];
     let rowClearAnimationStep = 0;
     let rowClearAnimationFlashTicks = 3;
     let rowClearAnimationColor = '#999';
     let tileSize = 20;
     let newPiece = false;
     let gameOver = false;
+    let gridOrPieceUpdated = false;
 
     const colors = [
         '#b54542',
@@ -19,47 +23,59 @@ define(function() {
     function setupGrid(configs) {
         grid = [];
         gameOver = false;
+        gridOrPieceUpdated = false;
         tileSize = configs.tileWidth;
         for(let i = 0; i < configs.rows; i++) {
             grid[i] = new Array(configs.cols);
         }
+        exportGrid = grid;
     }
 
     function render(ctx) {
         for(let i = 0; i < grid.length; i++) {
             for (let j = 0; j < grid[i].length; j++) {
-                if (grid[i][j] === undefined || grid[i][j] === null) continue;
-
-                // animate line clear
-                if (grid[i][j] < 0) {
-                    ctx.fillStyle = (Math.floor(rowClearAnimationStep / rowClearAnimationFlashTicks) % 2=== 1)? '#FFF' : rowClearAnimationColor;
-                    console.log(ctx.fillStyle, rowClearAnimationStep);
-                // normal rendering
-                } else {
-                    ctx.fillStyle = colors[grid[i][j]];
+                if (grid[i][j] !== undefined && grid[i][j] !== null) {
+                    // animate line clear
+                    if (grid[i][j] < 0) {
+                        ctx.fillStyle = (Math.floor(rowClearAnimationStep / rowClearAnimationFlashTicks) % 2 === 1) ? '#FFF' : rowClearAnimationColor;
+                        // normal rendering
+                    } else {
+                        ctx.fillStyle = colors[grid[i][j]];
+                    }
+                    ctx.fillRect(j * tileSize, i * tileSize, tileSize, tileSize);
                 }
-                ctx.fillRect(j*tileSize, i*tileSize, tileSize, tileSize);
+
+                // partner grid
+                if (partnerGrid[i] && partnerGrid[i][j] !== undefined && partnerGrid[i][j] !== null) {
+                    ctx.fillStyle = colors[partnerGrid[i][j]];
+                    ctx.fillRect(500 + j * tileSize, i * tileSize, tileSize, tileSize);
+                }
             }
         }
         rowClearAnimationStep++;
     }
 
-    function insertPiece(position, row, col, id) {
+    function safeInsertPiece(position, row, col, id, _grid) {
+        gridOrPieceUpdated = true;
         if (collisionCheck(position, row + 1, col)) {
             if (collisionCheck(position, row, col)) {
                 // game over
                 gameOver = true;
             }
-            for (let i = 0; i < position.length; i++) {
-                for (let j = 0; j < position[i].length; j++) {
-                    if (position[i][j] !== 1) continue;
-                    grid[row + i][col + j] = id;
-                }
-            }
+            insertPiece(position, row, col, id, _grid)
             newPiece = true;
             return true;
         }
         return false;
+    }
+
+    function insertPiece(position, row, col, id, _grid) {
+        for (let i = 0; i < position.length; i++) {
+            for (let j = 0; j < position[i].length; j++) {
+                if (position[i][j] !== 1) continue;
+                _grid[row + i][col + j] = id;
+            }
+        }
     }
 
     function collisionCheck(position, row, col) {
@@ -93,6 +109,7 @@ define(function() {
                     }
                 }
             }
+            exportGrid = grid;
         }
         // check for line removal
         if (rowClearAnimationStep === 6) {
@@ -105,19 +122,38 @@ define(function() {
                 }
             }
             grid = newGrid;
+            exportGrid = grid;
+
         }
         newPiece = false;
+    }
+
+    function getExportGrid(pusher, activePiece) {
+        if (!gridOrPieceUpdated) return;
+        gridOrPieceUpdated = false;
+        tempGrid = JSON.parse(JSON.stringify(exportGrid));
+        if (activePiece && activePiece.data) {
+            insertPiece(
+                activePiece.data.positions[activePiece.rotation],
+                activePiece.row,
+                activePiece.col,
+                activePiece.data.id,
+                tempGrid);
+        }
+        pusher.sendGrid(tempGrid);
     }
 
     return {
         setupGrid: setupGrid,
         getGrid: function() {return grid},
+        getExportGrid: getExportGrid,
         getCols: function() {return grid[0].length},
         isGameOver: function() {return gameOver},
         log: function(logger) {logger.log(grid)},
         update: update,
         collisionCheck: collisionCheck,
-        insertPiece: insertPiece,
+        safeInsertPiece: safeInsertPiece,
         render: render,
+        setPartnerGrid: function(grid) {partnerGrid = grid},
     }
 });
